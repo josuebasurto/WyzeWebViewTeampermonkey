@@ -79,6 +79,6 @@ Deshabilita el userscript desde Tampermonkey y recarga el portal.
 
 ## Créditos y deslinde
 
-Creado por **Josue Basurto** · [josuebasurto@gmail.com](mailto:josuebasurto@gmail.com)
+Creado por **Josue Basurto**
 
 Este userscript es una herramienta independiente para personalizar la interfaz local del WebPanel de Wyze. No es un producto oficial de Wyze, no está afiliado con Wyze Labs y no modifica la configuración de la cuenta, las cámaras ni los servicios de Wyze. Se proporciona "tal cual" y su uso es responsabilidad exclusiva del usuario. Revisa los permisos, políticas y términos aplicables antes de utilizarlo.

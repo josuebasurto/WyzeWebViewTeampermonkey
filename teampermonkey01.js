@@ -1,10 +1,9 @@
 // ==UserScript==
 // @name         Wyze Portal Grid Enhancer
 // @namespace    wyze-webkit
-// @version      1.3.1
+// @version      1.3.2
 // @description  Configura la cuadrícula de cámaras del portal Wyze.
 // @author       Josue Basurto
-// @contributor  josuebasurto@gmail.com
 // @match        https://my.wyze.com/*
 // @match        https://www.wyze.com/*
 // @run-at       document-idle
@@ -12,7 +11,7 @@
 // ==/UserScript==
 
 /*
- * Creditos: Josue Basurto <josuebasurto@gmail.com>
+ * Creditos: Josue Basurto
  *
  * Deslinde de responsabilidades:
  * Este userscript es una herramienta independiente para personalizar la
@@ -31,7 +30,7 @@
 	const STYLE_ID = 'wyze-grid-enhancer-style';
 	const PANEL_ID = 'wyze-grid-enhancer-panel';
 	const MODAL_ID = 'wyze-grid-enhancer-whats-new';
-	const VERSION = '1.3.1';
+	const VERSION = '1.3.2';
 	const SETTINGS_VERSION = 3;
 	const RETRY_DELAYS = [5000, 15000, 30000, 60000, 120000, 300000];
 	const defaults = { columns: 2, gap: 1, hideChrome: false, autoRetry: false };
@@ -105,8 +104,14 @@
 				position:static !important; inset:auto !important; transform:none !important; order:initial !important; margin:0 !important; padding:0 !important;
 				grid-column:auto !important; grid-row:auto !important; break-inside:auto !important; }
 			.wge-grid > * > *, .wge-grid > * > * > * { width:100% !important; max-width:none !important; height:100% !important; min-width:0 !important; }
+			.wge-grid [data-video-controls], .wge-grid [data-video-controls] > *, .wge-grid [data-video-controls-content] { width:100% !important; max-width:none !important; height:auto !important; min-width:0 !important; }
+			.wge-grid [data-video-controls] svg, .wge-grid [data-video-controls] button,
+			.wge-grid [data-video-controls] [aria-label="Full screen"], .wge-grid [data-video-controls] [aria-label^="Exit full screen"] {
+				width:auto !important; max-width:none !important; height:auto !important; min-width:0 !important; min-height:0 !important;
+			}
 			.wge-grid [data-header-video="true"] { width:100% !important; height:auto !important; min-width:0 !important; }
 			.wge-grid video, .wge-grid iframe { display:block !important; width:100% !important; height:100% !important; max-width:100%; object-fit:cover; }
+			.wge-grid :fullscreen { width:100vw !important; height:100vh !important; max-width:none !important; max-height:none !important; position:fixed !important; inset:0 !important; z-index:2147483646 !important; }
 			.wge-retry-card { position:relative !important; }
 			.wge-retry-dot { position:absolute !important; top:10px !important; right:10px !important; z-index:20; width:10px !important; height:10px !important; min-width:10px !important; min-height:10px !important; max-width:10px !important; max-height:10px !important; border:2px solid #fff;
 				border-radius:50%; background:#f3c316; box-shadow:0 0 0 2px rgba(243,195,22,.25), 0 1px 5px rgba(0,0,0,.45); }
@@ -289,7 +294,7 @@
 			<li>Las columnas y la separacion se ajustan al momento con controles de menos y mas.</li>
 			<li>El boton What's new permite volver a consultar estas novedades.</li>
 			<li>Los dispositivos offline pueden reintentarse automaticamente con backoff hasta cada 5 minutos.</li></ul>
-			<p style="margin:18px 0 0;color:#687681;font-size:12px">Creado por Josue Basurto · josuebasurto@gmail.com<br>Script independiente, no afiliado con Wyze. Uso bajo responsabilidad del usuario.</p>
+			<p style="margin:18px 0 0;color:#687681;font-size:12px">Creado por Josue Basurto<br>Script independiente, no afiliado con Wyze. Uso bajo responsabilidad del usuario.</p>
 			<div class="wge-modal-actions"><button type="button" class="wge-secondary" data-wge-later>Ver despues</button><button type="button" data-wge-close>Entendido</button></div></div></div>`;
 		document.body.appendChild(modal);
 		const close = () => {

@@ -4,7 +4,7 @@
 
 `WyzeWebKit` es un proyecto local para personalizar la interfaz web de Wyze mediante un userscript de Tampermonkey. El objetivo es mejorar la visualizacion de varias camaras en `https://my.wyze.com/home`, sin modificar la cuenta ni los dispositivos.
 
-Autor y contacto: **Josue Basurto** · `josuebasurto@gmail.com`
+Autor: **Josue Basurto**
 
 ## Archivos principales
 
