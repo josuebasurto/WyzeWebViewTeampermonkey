@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wyze WebPanel Toolkit</title>
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #61707d;
+      --line: #dce3e8;
+      --paper: #f6f8fa;
+      --panel: #ffffff;
+      --cyan: #00b7b0;
+      --blue: #3564d8;
+      --violet: #4b32b8;
+      --dark: #1b1e22;
+      --shadow: 0 18px 50px rgba(31, 45, 61, .1);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.6 "Segoe UI", system-ui, sans-serif;
+    }
+    a { color: var(--blue); font-weight: 650; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    code, pre { font-family: Consolas, "Liberation Mono", monospace; }
+    code { padding: .16rem .35rem; color: #303d48; background: #edf1f4; border-radius: 4px; }
+    .shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
+    aside {
+      position: sticky; top: 0; height: 100vh; padding: 30px 22px;
+      color: #eef8f8; background: var(--dark); border-right: 4px solid var(--cyan);
+    }
+    .brand { margin: 0 0 34px; color: var(--cyan); font-size: 1.55rem; font-weight: 800; letter-spacing: .14em; }
+    .brand span { color: #fff; }
+    .nav-title { margin: 0 0 9px; color: #91a0ad; font-size: .72rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    nav a { display: block; margin: 3px -10px; padding: 8px 10px; color: #dbe3e8; font-size: .94rem; text-decoration: none; border-radius: 5px; }
+    nav a:hover { color: #fff; background: #30343a; }
+    .version { position: absolute; right: 22px; bottom: 22px; color: #8e9aa4; font-size: .78rem; }
+    main { width: min(1120px, 100%); margin: 0 auto; padding: 56px clamp(24px, 6vw, 84px) 80px; }
+    .hero { max-width: 780px; padding-bottom: 34px; border-bottom: 1px solid var(--line); }
+    .eyebrow { margin: 0 0 12px; color: var(--violet); font-size: .76rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { max-width: 700px; margin: 0; font-size: clamp(2.2rem, 5vw, 4.2rem); line-height: 1.04; letter-spacing: -.04em; }
+    .lead { max-width: 700px; margin: 20px 0 0; color: var(--muted); font-size: 1.12rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    .button { display: inline-block; padding: 10px 16px; color: #fff; background: var(--violet); border-radius: 5px; text-decoration: none; }
+    .button.alt { color: var(--ink); background: #e4ebf1; }
+    section { margin-top: 48px; scroll-margin-top: 24px; }
+    h2 { margin: 0 0 16px; font-size: 1.65rem; letter-spacing: -.025em; }
+    h3 { margin: 0 0 5px; font-size: 1.05rem; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .card { padding: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; box-shadow: var(--shadow); }
+    .card p { margin: 5px 0 0; color: var(--muted); font-size: .94rem; }
+    .step { display: grid; grid-template-columns: 38px 1fr; gap: 14px; align-items: start; margin: 12px 0; }
+    .number { display: grid; width: 34px; height: 34px; place-items: center; color: #fff; background: var(--blue); border-radius: 50%; font-weight: 800; }
+    .step p { margin: 0; color: var(--muted); }
+    .settings { width: 100%; border-collapse: collapse; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 7px; }
+    .settings th, .settings td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--line); }
+    .settings th { color: #44525e; background: #edf2f5; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .settings tr:last-child td { border-bottom: 0; }
+    .note { padding: 15px 18px; color: #394751; background: #e4f5f3; border-left: 4px solid var(--cyan); }
+    .files { display: grid; gap: 9px; }
+    .file { display: flex; justify-content: space-between; gap: 16px; padding: 13px 15px; background: #fff; border: 1px solid var(--line); border-radius: 5px; }
+    .file small { color: var(--muted); }
+    footer { margin-top: 65px; padding-top: 18px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }
+    @media (max-width: 760px) {
+      .shell { display: block; }
+      aside { position: static; height: auto; padding: 20px; border-right: 0; border-bottom: 4px solid var(--cyan); }
+      .brand { margin-bottom: 16px; }
+      nav { display: flex; flex-wrap: wrap; gap: 4px; }
+      nav a { margin: 0; }
+      .version { display: none; }
+      main { padding: 38px 20px 55px; }
+      .grid { grid-template-columns: 1fr; }
+      .settings { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <p class="brand">WY<span>ZE</span></p>
+      <p class="nav-title">Guía rápida</p>
+      <nav aria-label="Navegación del documento">
+        <a href="#inicio">Inicio</a>
+        <a href="#instalacion">Instalación</a>
+        <a href="#controles">Controles</a>
+        <a href="#archivos">Archivos</a>
+        <a href="#problemas">Problemas comunes</a>
+      </nav>
+      <span class="version">Toolkit 1.0</span>
+    </aside>
+
+    <main>
+      <header class="hero" id="inicio">
+        <p class="eyebrow">Wyze WebPanel Toolkit</p>
+        <h1>Una vista más útil para tus cámaras.</h1>
+        <p class="lead">Documentación y punto de entrada para los scripts de Tampermonkey que personalizan el portal web de Wyze.</p>
+        <div class="actions">
+          <a class="button" href="teampermonkey01.js" download>Descargar userscript</a>
+          <a class="button alt" href="https://my.wyze.com/home" target="_blank" rel="noreferrer">Abrir WebPanel</a>
+        </div>
+      </header>
+
+      <section id="instalacion">
+        <h2>Instalación</h2>
+        <div class="step"><span class="number">1</span><p>Instala la extensión <a href="https://www.tampermonkey.net/" target="_blank" rel="noreferrer">Tampermonkey</a> en tu navegador.</p></div>
+        <div class="step"><span class="number">2</span><p>Abre <a href="teampermonkey01.js">teampermonkey01.js</a>, copia su contenido y crea un script nuevo desde el panel de Tampermonkey.</p></div>
+        <div class="step"><span class="number">3</span><p>Guarda el script, entra a <code>https://my.wyze.com/home</code> y recarga con <code>Ctrl + F5</code>.</p></div>
+        <div class="note">El script solo modifica la interfaz local del navegador. No cambia la cuenta, las cámaras ni la configuración del servicio Wyze.</div>
+      </section>
+
+      <section id="controles">
+        <h2>Wyze Grid Enhancer</h2>
+        <div class="grid">
+          <article class="card"><h3>Columnas</h3><p>Define cuántas cámaras aparecen por fila. El rango actual es de 1 a 8.</p></article>
+          <article class="card"><h3>Filas</h3><p>Define el alto de cada fila. Usa 0 para dejar que el contenido determine el tamaño.</p></article>
+          <article class="card"><h3>Separación</h3><p>Controla el espacio entre cámaras. El valor 0 elimina la separación visual.</p></article>
+          <article class="card"><h3>Ocultar navegación</h3><p>Retira la barra lateral y la navegación para aprovechar el área de visualización.</p></article>
+          <article class="card"><h3>Minimizar</h3><p>Usa el botón menos del encabezado para dejar el panel de configuración fuera del camino.</p></article>
+          <article class="card"><h3>Persistencia</h3><p>La configuración se guarda en el navegador y se recupera al volver al portal.</p></article>
+        </div>
+        <table class="settings">
+          <thead><tr><th>Opción</th><th>Predeterminado</th><th>Almacenamiento</th></tr></thead>
+          <tbody>
+            <tr><td>Columnas</td><td>2</td><td><code>wyze-grid-enhancer-settings</code></td></tr>
+            <tr><td>Filas</td><td>0 (auto)</td><td><code>localStorage</code></td></tr>
+            <tr><td>Separación</td><td>0 px</td><td><code>localStorage</code></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="archivos">
+        <h2>Archivos del proyecto</h2>
+        <div class="files">
+          <div class="file"><a href="teampermonkey01.js">teampermonkey01.js</a><small>Userscript principal de la cuadrícula</small></div>
+          <div class="file"><a href="WebPage/Wyze%20Web%20Portal.html">WebPage/Wyze Web Portal.html</a><small>Captura inicial del portal</small></div>
+          <div class="file"><a href="WebPage/Wyze%20Web%20Portal%202.html">WebPage/Wyze Web Portal 2.html</a><small>Captura de referencia adicional</small></div>
+          <div class="file"><a href="WebPage/Wyze%20Web%20Portal%203.html">WebPage/Wyze Web Portal 3.html</a><small>Captura con el script aplicado</small></div>
+        </div>
+      </section>
+
+      <section id="problemas">
+        <h2>Problemas comunes</h2>
+        <div class="card">
+          <h3>El panel no aparece</h3>
+          <p>Comprueba que Tampermonkey esté activo para <code>my.wyze.com</code>. Después recarga con <code>Ctrl + F5</code> y verifica que el userscript esté habilitado.</p>
+          <h3 style="margin-top:18px">Las cámaras conservan su tamaño anterior</h3>
+          <p>Cierra otras pestañas del portal, vuelve a cargar la página y pulsa <strong>Aplicar</strong> después de elegir las columnas y filas.</p>
+          <h3 style="margin-top:18px">Quieres volver al diseño original</h3>
+          <p>Desactiva el userscript desde Tampermonkey y recarga el portal. El botón <strong>Restablecer</strong> solo devuelve las opciones del script a sus valores iniciales.</p>
+        </div>
+      </section>
+
+      <footer>Proyecto local para personalizar la interfaz del WebPanel de Wyze. Los scripts futuros pueden documentarse y enlazarse desde esta página.</footer>
+    </main>
+  </div>
+</body>
+</html>
