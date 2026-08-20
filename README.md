@@ -6,12 +6,15 @@ Userscript para personalizar la interfaz del WebPanel de Wyze y organizar la vis
 
 ## Funciones
 
-- Configuración de columnas y filas de cámaras.
-- Separación ajustable entre cámaras, incluyendo `0 px`.
+- Configuración de columnas de cámaras con controles `-` y `+`.
+- Separación ajustable entre cámaras, con `1 px` como valor inicial.
 - Corrección de espacios blancos provocados por el layout Masonry del portal.
 - Opción para ocultar la navegación y aprovechar más pantalla.
 - Panel de configuración minimizable.
-- Aviso visual **What's new** al instalar una nueva versión.
+- Aviso visual **What's new** al instalar una nueva versión y botón para volver a abrirlo.
+- Cambios aplicados inmediatamente, sin botón Aplicar.
+- Reintento opcional para cámaras offline con espera incremental hasta cada 5 minutos.
+- Indicador amarillo dentro de cada cámara mientras el reintento automático está activo.
 - Configuración persistente mediante `localStorage`.
 - Detección automática de cambios en la interfaz React del portal.
 
@@ -31,11 +34,15 @@ El panel **Wyze Grid** aparecerá minimizado en la esquina inferior derecha.
 | Opción | Descripción |
 | --- | --- |
 | Columnas | Número de cámaras por fila, de 1 a 8. |
-| Filas | Alto de cada fila; `0` usa el tamaño automático. |
-| Separación | Espacio entre cámaras, de 0 a 24 px. |
+| Separación | Espacio entre cámaras, de 0 a 24 px; inicia en 1 px. |
 | Ocultar navegación | Oculta la navegación para maximizar el área de vídeo. |
-| Aplicar | Guarda y activa los cambios. |
+| What's new | Vuelve a abrir el modal de novedades. |
 | Restablecer | Devuelve las opciones a sus valores iniciales. |
+| Reintentar offline | Activa reintentos automáticos para tarjetas con estado offline. |
+
+Los cambios se guardan y aplican automáticamente al modificar un control.
+
+Cuando está activo, el reintento usa esta secuencia por cámara: `5 s`, `15 s`, `30 s`, `1 min`, `2 min` y después `5 min` entre intentos. El checkbox está desactivado por defecto.
 
 La configuración se almacena localmente en el navegador con la clave `wyze-grid-enhancer-settings`.
 
@@ -64,7 +71,7 @@ Comprueba que Tampermonkey esté habilitado para `my.wyze.com`, que el script es
 
 ### Las cámaras mantienen espacios blancos
 
-Selecciona las columnas y filas deseadas y pulsa **Aplicar**. Si el portal acaba de cambiar de vista, recarga la página y vuelve a aplicar la configuración.
+Si el portal acaba de cambiar de vista, recarga la página. Los cambios se aplican automáticamente.
 
 ### Quiero volver al diseño original
 

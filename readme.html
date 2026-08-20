@@ -117,18 +117,19 @@
         <h2>Wyze Grid Enhancer</h2>
         <div class="grid">
           <article class="card"><h3>Columnas</h3><p>Define cuántas cámaras aparecen por fila. El rango actual es de 1 a 8.</p></article>
-          <article class="card"><h3>Filas</h3><p>Define el alto de cada fila. Usa 0 para dejar que el contenido determine el tamaño.</p></article>
-          <article class="card"><h3>Separación</h3><p>Controla el espacio entre cámaras. El valor 0 elimina la separación visual.</p></article>
+          <article class="card"><h3>Separación</h3><p>Controla el espacio entre cámaras con un control de menos y más. Inicia en 1 px.</p></article>
           <article class="card"><h3>Ocultar navegación</h3><p>Retira la barra lateral y la navegación para aprovechar el área de visualización.</p></article>
           <article class="card"><h3>Minimizar</h3><p>Usa el botón menos del encabezado para dejar el panel de configuración fuera del camino.</p></article>
-          <article class="card"><h3>Persistencia</h3><p>La configuración se guarda en el navegador y se recupera al volver al portal.</p></article>
+          <article class="card"><h3>What's new</h3><p>Abre de nuevo el modal de novedades desde el panel cuando lo necesites.</p></article>
+          <article class="card"><h3>Reintento offline</h3><p>Activa reintentos con espera incremental y un punto amarillo por cámara.</p></article>
         </div>
         <table class="settings">
           <thead><tr><th>Opción</th><th>Predeterminado</th><th>Almacenamiento</th></tr></thead>
           <tbody>
             <tr><td>Columnas</td><td>2</td><td><code>wyze-grid-enhancer-settings</code></td></tr>
-            <tr><td>Filas</td><td>0 (auto)</td><td><code>localStorage</code></td></tr>
-            <tr><td>Separación</td><td>0 px</td><td><code>localStorage</code></td></tr>
+            <tr><td>Separación</td><td>1 px</td><td><code>localStorage</code></td></tr>
+            <tr><td>Aplicación</td><td>Inmediata</td><td><code>localStorage</code></td></tr>
+            <tr><td>Reintento offline</td><td>Desactivado</td><td><code>localStorage</code></td></tr>
           </tbody>
         </table>
       </section>
@@ -149,7 +150,7 @@
           <h3>El panel no aparece</h3>
           <p>Comprueba que Tampermonkey esté activo para <code>my.wyze.com</code>. Después recarga con <code>Ctrl + F5</code> y verifica que el userscript esté habilitado.</p>
           <h3 style="margin-top:18px">Las cámaras conservan su tamaño anterior</h3>
-          <p>Cierra otras pestañas del portal, vuelve a cargar la página y pulsa <strong>Aplicar</strong> después de elegir las columnas y filas.</p>
+          <p>Cierra otras pestañas del portal y vuelve a cargar la página. Los cambios de columnas y separación se aplican automáticamente.</p>
           <h3 style="margin-top:18px">Quieres volver al diseño original</h3>
           <p>Desactiva el userscript desde Tampermonkey y recarga el portal. El botón <strong>Restablecer</strong> solo devuelve las opciones del script a sus valores iniciales.</p>
         </div>

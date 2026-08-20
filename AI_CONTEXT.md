@@ -22,13 +22,17 @@ El userscript:
 - Prioriza el contenedor `.MuiMasonry-root` cuando contiene varias camaras.
 - Sustituye el layout Masonry por CSS Grid.
 - Permite elegir de 1 a 8 columnas mediante un control `- / valor / +`.
-- Permite configurar filas, separacion entre camaras y ocultar navegacion.
+- Permite configurar la separacion entre camaras con otro control `- / valor / +` y ocultar navegacion.
+- Aplica y guarda los cambios inmediatamente, sin boton Aplicar.
+- Incluye un boton para volver a abrir el modal `What's new`.
+- Puede reintentar tarjetas offline con un checkbox, una secuencia de backoff de `5 s`, `15 s`, `30 s`, `1 min`, `2 min` y despues cada `5 min`.
+- Muestra un punto amarillo dentro de cada tarjeta mientras el reintento automatico esta activo.
 - Guarda opciones en `localStorage` con la clave `wyze-grid-enhancer-settings`.
 - Inicia el panel minimizado.
 - Muestra un modal `What's new` una vez por version usando `wyze-grid-enhancer-whats-new`.
 - Incluye creditos, correo y deslinde de responsabilidades.
 
-Valores predeterminados actuales: `columns: 2`, `rows: 0`, `gap: 0`, `hideChrome: false`.
+Valores predeterminados actuales: `columns: 2`, `gap: 1`, `hideChrome: false`, `autoRetry: false`.
 
 ## Como validar cambios
 
@@ -43,7 +47,7 @@ Tambien revisar errores del archivo en VS Code y probar manualmente en el portal
 1. Actualizar el userscript en Tampermonkey.
 2. Recargar `my.wyze.com/home` con `Ctrl + F5`.
 3. Abrir el panel minimizado.
-4. Probar columnas, filas, separacion y ocultar navegacion.
+4. Probar columnas, separacion, el boton `What's new`, ocultar navegacion y reintentos offline.
 5. Confirmar que no aparecen espacios blancos entre las tarjetas.
 
 ## Decisiones importantes
@@ -52,6 +56,8 @@ Tambien revisar errores del archivo en VS Code y probar manualmente en el portal
 - `MuiMasonry-root` fue encontrado en las capturas y es el mejor ancla conocida, pero debe verificarse si Wyze cambia su frontend.
 - La deteccion generica de ancestros se conserva como fallback si desaparece `.MuiMasonry-root`.
 - El `MutationObserver` es necesario porque las camaras y sus videos aparecen o se reconstruyen despues de la carga inicial.
+- Los reintentos usan el boton visible `Refresh` de cada tarjeta, no llamadas directas a la API.
+- Los reintentos estan desactivados por defecto y tienen un limite de 5 minutos para evitar llamadas frecuentes.
 - Mantener `@grant none` salvo que se necesite una capacidad concreta de Tampermonkey.
 - Conservar el deslinde: el script es independiente, no afiliado con Wyze y se entrega tal cual.
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wyze Portal Grid Enhancer
 // @namespace    wyze-webkit
-// @version      1.1.0
+// @version      1.3.1
 // @description  Configura la cuadrícula de cámaras del portal Wyze.
 // @author       Josue Basurto
 // @contributor  josuebasurto@gmail.com
@@ -31,22 +31,32 @@
 	const STYLE_ID = 'wyze-grid-enhancer-style';
 	const PANEL_ID = 'wyze-grid-enhancer-panel';
 	const MODAL_ID = 'wyze-grid-enhancer-whats-new';
-	const VERSION = '1.1.0';
-	const defaults = { columns: 2, rows: 0, gap: 0, hideChrome: false };
+	const VERSION = '1.3.1';
+	const SETTINGS_VERSION = 3;
+	const RETRY_DELAYS = [5000, 15000, 30000, 60000, 120000, 300000];
+	const defaults = { columns: 2, gap: 1, hideChrome: false, autoRetry: false };
 	let settings = loadSettings();
 	let grid;
 	let applying = false;
+	const retryStates = new Map();
 
 	function loadSettings() {
 		try {
-			return { ...defaults, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') };
+			const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+			const isLegacySettings = stored.settingsVersion !== SETTINGS_VERSION;
+			return {
+				columns: clamp(stored.columns ?? defaults.columns, 1, 8),
+				gap: clamp(isLegacySettings && Number(stored.gap) === 0 ? defaults.gap : (stored.gap ?? defaults.gap), 0, 24),
+				hideChrome: Boolean(stored.hideChrome ?? defaults.hideChrome),
+				autoRetry: Boolean(stored.autoRetry ?? defaults.autoRetry),
+			};
 		} catch (error) {
 			return { ...defaults };
 		}
 	}
 
 	function saveSettings() {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+		localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...settings, settingsVersion: SETTINGS_VERSION }));
 	}
 
 	function addStyle() {
@@ -71,6 +81,7 @@
 			#${PANEL_ID} .wge-range output { float:right; font-weight:600; }
 			#${PANEL_ID} .wge-actions { display:flex; gap:7px; margin-top:12px; }
 			#${PANEL_ID} .wge-actions button:last-child { background:#687482; }
+			#${PANEL_ID} .wge-retry-note { margin:5px 0 0; color:#687681; font-size:11px; }
 			#${MODAL_ID} { position:fixed; inset:0; z-index:2147483647; display:grid; place-items:center; padding:20px;
 				background:rgba(17,22,28,.48); font:14px/1.45 system-ui,sans-serif; }
 			#${MODAL_ID}[hidden] { display:none; }
@@ -87,15 +98,20 @@
 			#${MODAL_ID} button { padding:9px 15px; color:#fff; background:#4930b5; border:0; border-radius:5px; cursor:pointer; font-weight:700; }
 			#${MODAL_ID} button.wge-secondary { color:#34414b; background:#e8edf1; }
 			.wge-grid { display:grid !important; grid-template-columns:repeat(var(--wge-columns), minmax(0, 1fr)) !important;
-				grid-auto-rows:var(--wge-row-size, auto) !important; gap:var(--wge-gap) !important; padding:0 !important; margin:0 !important;
+				grid-auto-rows:auto !important; gap:var(--wge-gap) !important; padding:0 !important; margin:0 !important;
 				width:100% !important; max-width:none !important; height:var(--wge-grid-height, auto) !important; overflow:auto !important; align-content:start !important;
 				grid-auto-flow:row !important; column-count:initial !important; columns:initial !important; }
-			.wge-grid > * { box-sizing:border-box !important; min-width:0 !important; width:100% !important; height:var(--wge-row-size, auto) !important;
+			.wge-grid > * { box-sizing:border-box !important; min-width:0 !important; width:100% !important; height:auto !important;
 				position:static !important; inset:auto !important; transform:none !important; order:initial !important; margin:0 !important; padding:0 !important;
 				grid-column:auto !important; grid-row:auto !important; break-inside:auto !important; }
 			.wge-grid > * > *, .wge-grid > * > * > * { width:100% !important; max-width:none !important; height:100% !important; min-width:0 !important; }
-			.wge-grid [data-header-video="true"] { width:100% !important; height:100% !important; min-width:0 !important; }
+			.wge-grid [data-header-video="true"] { width:100% !important; height:auto !important; min-width:0 !important; }
 			.wge-grid video, .wge-grid iframe { display:block !important; width:100% !important; height:100% !important; max-width:100%; object-fit:cover; }
+			.wge-retry-card { position:relative !important; }
+			.wge-retry-dot { position:absolute !important; top:10px !important; right:10px !important; z-index:20; width:10px !important; height:10px !important; min-width:10px !important; min-height:10px !important; max-width:10px !important; max-height:10px !important; border:2px solid #fff;
+				border-radius:50%; background:#f3c316; box-shadow:0 0 0 2px rgba(243,195,22,.25), 0 1px 5px rgba(0,0,0,.45); }
+			.wge-retry-dot[data-active="true"] { animation:wge-retry-pulse 1s ease-in-out infinite; }
+			@keyframes wge-retry-pulse { 50% { transform:scale(1.35); box-shadow:0 0 0 5px rgba(243,195,22,.18), 0 1px 7px rgba(0,0,0,.5); } }
 			body.wge-hide-chrome nav, body.wge-hide-chrome header, body.wge-hide-chrome [role="navigation"] { display:none !important; }
 		`;
 		document.head.appendChild(style);
@@ -137,11 +153,80 @@
 			grid.style.setProperty('--wge-columns', String(settings.columns));
 			grid.style.setProperty('--wge-gap', `${settings.gap}px`);
 			grid.style.setProperty('--wge-grid-height', 'calc(100vh - 136px)');
-			if (settings.rows > 0) grid.style.setProperty('--wge-row-size', `calc((100vh - 136px) / ${settings.rows})`);
-			else grid.style.removeProperty('--wge-row-size');
+			grid.style.removeProperty('--wge-row-size');
 		}
 		document.body.classList.toggle('wge-hide-chrome', settings.hideChrome);
+		syncOfflineRetries();
 		applying = false;
+	}
+
+	function findRefreshButton(card) {
+		return [...card.querySelectorAll('button')].find((button) => /^(refresh|retry)$/i.test(button.textContent.trim()) || /refresh|retry/i.test(button.getAttribute('aria-label') || ''));
+	}
+
+	function isOfflineCard(card) {
+		return /device\s+is\s+offline/i.test(card.textContent) && Boolean(findRefreshButton(card));
+	}
+
+	function addRetryIndicator(card) {
+		card.classList.add('wge-retry-card');
+		let dot = card.querySelector('.wge-retry-dot');
+		if (!dot) {
+			dot = document.createElement('span');
+			dot.className = 'wge-retry-dot';
+			dot.setAttribute('role', 'status');
+			dot.setAttribute('aria-label', 'Reintento automatico activado');
+			card.appendChild(dot);
+		}
+		return dot;
+	}
+
+	function clearRetry(card) {
+		const state = retryStates.get(card);
+		if (state && state.timer) window.clearTimeout(state.timer);
+		retryStates.delete(card);
+		const dot = card.querySelector('.wge-retry-dot');
+		if (dot) dot.remove();
+		card.classList.remove('wge-retry-card');
+	}
+
+	function scheduleRetry(card, state) {
+		if (!settings.autoRetry || !isOfflineCard(card) || retryStates.get(card) !== state) return;
+		const delay = RETRY_DELAYS[Math.min(state.attempt, RETRY_DELAYS.length - 1)];
+		state.timer = window.setTimeout(() => {
+			state.timer = null;
+			if (!settings.autoRetry || !isOfflineCard(card)) {
+				clearRetry(card);
+				return;
+			}
+			const dot = addRetryIndicator(card);
+			dot.dataset.active = 'true';
+			state.attempt += 1;
+			const refreshButton = findRefreshButton(card);
+			if (refreshButton) refreshButton.click();
+			window.setTimeout(() => {
+				if (dot.isConnected) dot.remove();
+			}, 1500);
+			scheduleRetry(card, state);
+		}, delay);
+	}
+
+	function syncOfflineRetries() {
+		if (!grid) return;
+		const cards = new Set([...grid.children]);
+		if (!settings.autoRetry) {
+			retryStates.forEach((state, card) => clearRetry(card));
+			return;
+		}
+		retryStates.forEach((state, card) => {
+			if (!cards.has(card) || !isOfflineCard(card)) clearRetry(card);
+		});
+		cards.forEach((card) => {
+			if (!isOfflineCard(card) || retryStates.has(card)) return;
+			const state = { attempt: 0, timer: null };
+			retryStates.set(card, state);
+			scheduleRetry(card, state);
+		});
 	}
 
 	function buildPanel() {
@@ -151,31 +236,37 @@
 		panel.dataset.collapsed = 'true';
 		panel.innerHTML = `<div class="wge-title"><span>Wyze Grid</span><button type="button" title="Minimizar">-</button></div>
 			<div class="wge-body"><label>Columnas <span class="wge-stepper"><button type="button" data-columns-step="-1" aria-label="Reducir columnas">-</button><input name="columns" type="number" min="1" max="8" value="${settings.columns}"><button type="button" data-columns-step="1" aria-label="Aumentar columnas">+</button></span></label>
-			<label>Filas (0 = auto) <input name="rows" type="number" min="0" max="8" value="${settings.rows}"></label>
-			<label class="wge-range">Separación <output>${settings.gap}px</output><input name="gap" type="range" min="0" max="24" value="${settings.gap}"></label>
+			<label>Separación <span class="wge-stepper"><button type="button" data-gap-step="-1" aria-label="Reducir separación">-</button><input name="gap" type="number" min="0" max="24" value="${settings.gap}"><button type="button" data-gap-step="1" aria-label="Aumentar separación">+</button></span></label>
 			<label>Ocultar navegación <input name="hideChrome" type="checkbox" ${settings.hideChrome ? 'checked' : ''}></label>
-			<div class="wge-actions"><button name="apply" type="button">Aplicar</button><button name="reset" type="button">Restablecer</button></div></div>`;
+			<label>Reintentar offline <input name="autoRetry" type="checkbox" ${settings.autoRetry ? 'checked' : ''}></label>
+			<p class="wge-retry-note">Reintentos: 5 s, 15 s, 30 s, 1 min, 2 min y luego cada 5 min.</p>
+			<div class="wge-actions"><button name="whatsNew" type="button">What's new</button><button name="reset" type="button">Restablecer</button></div></div>`;
 		panel.querySelector('.wge-title button').addEventListener('click', () => {
 			panel.dataset.collapsed = panel.dataset.collapsed === 'true' ? 'false' : 'true';
 		});
-		panel.querySelector('[name="gap"]').addEventListener('input', (event) => {
-			panel.querySelector('output').textContent = `${event.target.value}px`;
-		});
-		panel.querySelectorAll('[data-columns-step]').forEach((button) => {
-			button.addEventListener('click', () => {
-				const input = panel.querySelector('[name="columns"]');
-				input.value = clamp(Number.parseInt(input.value, 10) + Number(button.dataset.columnsStep), 1, 8);
-				input.dispatchEvent(new Event('change', { bubbles: true }));
-			});
-		});
-		panel.querySelector('[name="apply"]').addEventListener('click', () => {
+		const updateSettings = () => {
 			settings.columns = clamp(panel.querySelector('[name="columns"]').value, 1, 8);
-			settings.rows = clamp(panel.querySelector('[name="rows"]').value, 0, 8);
 			settings.gap = clamp(panel.querySelector('[name="gap"]').value, 0, 24);
 			settings.hideChrome = panel.querySelector('[name="hideChrome"]').checked;
+			settings.autoRetry = panel.querySelector('[name="autoRetry"]').checked;
 			saveSettings();
 			applyGrid();
+		};
+		panel.querySelectorAll('[name="columns"], [name="gap"]').forEach((input) => input.addEventListener('input', updateSettings));
+		panel.querySelector('[name="hideChrome"]').addEventListener('change', updateSettings);
+		panel.querySelector('[name="autoRetry"]').addEventListener('change', updateSettings);
+		panel.querySelectorAll('[data-columns-step], [data-gap-step]').forEach((button) => {
+			button.addEventListener('click', () => {
+				const isGap = button.hasAttribute('data-gap-step');
+				const input = panel.querySelector(isGap ? '[name="gap"]' : '[name="columns"]');
+				const step = Number(button.dataset[isGap ? 'gapStep' : 'columnsStep']);
+				const maximum = isGap ? 24 : 8;
+				const minimum = isGap ? 0 : 1;
+				input.value = clamp(Number.parseInt(input.value, 10) + step, minimum, maximum);
+				updateSettings();
+			});
 		});
+		panel.querySelector('[name="whatsNew"]').addEventListener('click', () => showWhatsNew(true));
 		panel.querySelector('[name="reset"]').addEventListener('click', () => {
 			settings = { ...defaults };
 			saveSettings();
@@ -186,8 +277,8 @@
 		document.body.appendChild(panel);
 	}
 
-	function showWhatsNew() {
-		if (localStorage.getItem(WHATS_NEW_KEY) === VERSION || document.getElementById(MODAL_ID)) return;
+	function showWhatsNew(force = false) {
+		if ((!force && localStorage.getItem(WHATS_NEW_KEY) === VERSION) || document.getElementById(MODAL_ID)) return;
 		const modal = document.createElement('div');
 		modal.id = MODAL_ID;
 		modal.setAttribute('role', 'dialog');
@@ -195,7 +286,9 @@
 		modal.innerHTML = `<div class="wge-modal"><div class="wge-modal-head"><p class="wge-modal-kicker">Wyze Grid Enhancer</p><h2>What's new</h2></div>
 			<div class="wge-modal-body"><ul><li>El panel de configuracion ahora inicia minimizado.</li>
 			<li>La cuadrícula elimina los espacios blancos y respeta las columnas elegidas.</li>
-			<li>Puedes configurar filas, separacion y ocultar la navegacion.</li></ul>
+			<li>Las columnas y la separacion se ajustan al momento con controles de menos y mas.</li>
+			<li>El boton What's new permite volver a consultar estas novedades.</li>
+			<li>Los dispositivos offline pueden reintentarse automaticamente con backoff hasta cada 5 minutos.</li></ul>
 			<p style="margin:18px 0 0;color:#687681;font-size:12px">Creado por Josue Basurto · josuebasurto@gmail.com<br>Script independiente, no afiliado con Wyze. Uso bajo responsabilidad del usuario.</p>
 			<div class="wge-modal-actions"><button type="button" class="wge-secondary" data-wge-later>Ver despues</button><button type="button" data-wge-close>Entendido</button></div></div></div>`;
 		document.body.appendChild(modal);
