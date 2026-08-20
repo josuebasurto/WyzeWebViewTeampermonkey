@@ -15,6 +15,8 @@ Userscript para personalizar la interfaz del WebPanel de Wyze y organizar la vis
 - Cambios aplicados inmediatamente, sin botón Aplicar.
 - Reintento opcional para cámaras offline con espera incremental hasta cada 5 minutos.
 - Indicador amarillo dentro de cada cámara mientras el reintento automático está activo.
+- Fullscreen directo por cámara, independiente del layout de Masonry.
+- Opción para mantener la pantalla activa mientras el portal está visible.
 - Configuración persistente mediante `localStorage`.
 - Detección automática de cambios en la interfaz React del portal.
 
@@ -39,10 +41,13 @@ El panel **Wyze Grid** aparecerá minimizado en la esquina inferior derecha.
 | What's new | Vuelve a abrir el modal de novedades. |
 | Restablecer | Devuelve las opciones a sus valores iniciales. |
 | Reintentar offline | Activa reintentos automáticos para tarjetas con estado offline. |
+| Mantener pantalla activa | Solicita Screen Wake Lock para evitar el reposo normal de la pantalla. |
 
 Los cambios se guardan y aplican automáticamente al modificar un control.
 
 Cuando está activo, el reintento usa esta secuencia por cámara: `5 s`, `15 s`, `30 s`, `1 min`, `2 min` y después `5 min` entre intentos. El checkbox está desactivado por defecto.
+
+La opción de pantalla activa requiere un navegador compatible y una página segura (`https`). El sistema operativo o las políticas corporativas pueden ignorarla.
 
 La configuración se almacena localmente en el navegador con la clave `wyze-grid-enhancer-settings`.
 

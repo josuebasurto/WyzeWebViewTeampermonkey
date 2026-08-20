@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wyze Portal Grid Enhancer
 // @namespace    wyze-webkit
-// @version      1.3.2
+// @version      1.4.0
 // @description  Configura la cuadrícula de cámaras del portal Wyze.
 // @author       Josue Basurto
 // @match        https://my.wyze.com/*
@@ -30,13 +30,14 @@
 	const STYLE_ID = 'wyze-grid-enhancer-style';
 	const PANEL_ID = 'wyze-grid-enhancer-panel';
 	const MODAL_ID = 'wyze-grid-enhancer-whats-new';
-	const VERSION = '1.3.2';
-	const SETTINGS_VERSION = 3;
+	const VERSION = '1.4.0';
+	const SETTINGS_VERSION = 4;
 	const RETRY_DELAYS = [5000, 15000, 30000, 60000, 120000, 300000];
-	const defaults = { columns: 2, gap: 1, hideChrome: false, autoRetry: false };
+	const defaults = { columns: 2, gap: 1, hideChrome: false, autoRetry: false, keepScreenAwake: false };
 	let settings = loadSettings();
 	let grid;
 	let applying = false;
+	let wakeLock = null;
 	const retryStates = new Map();
 
 	function loadSettings() {
@@ -48,6 +49,7 @@
 				gap: clamp(isLegacySettings && Number(stored.gap) === 0 ? defaults.gap : (stored.gap ?? defaults.gap), 0, 24),
 				hideChrome: Boolean(stored.hideChrome ?? defaults.hideChrome),
 				autoRetry: Boolean(stored.autoRetry ?? defaults.autoRetry),
+				keepScreenAwake: Boolean(stored.keepScreenAwake ?? defaults.keepScreenAwake),
 			};
 		} catch (error) {
 			return { ...defaults };
@@ -112,6 +114,8 @@
 			.wge-grid [data-header-video="true"] { width:100% !important; height:auto !important; min-width:0 !important; }
 			.wge-grid video, .wge-grid iframe { display:block !important; width:100% !important; height:100% !important; max-width:100%; object-fit:cover; }
 			.wge-grid :fullscreen { width:100vw !important; height:100vh !important; max-width:none !important; max-height:none !important; position:fixed !important; inset:0 !important; z-index:2147483646 !important; }
+			.wge-grid > :fullscreen { display:flex !important; align-items:stretch !important; justify-content:stretch !important; background:#000 !important; }
+			.wge-grid > :fullscreen > *, .wge-grid > :fullscreen video { width:100vw !important; height:100vh !important; max-width:none !important; max-height:none !important; }
 			.wge-retry-card { position:relative !important; }
 			.wge-retry-dot { position:absolute !important; top:10px !important; right:10px !important; z-index:20; width:10px !important; height:10px !important; min-width:10px !important; min-height:10px !important; max-width:10px !important; max-height:10px !important; border:2px solid #fff;
 				border-radius:50%; background:#f3c316; box-shadow:0 0 0 2px rgba(243,195,22,.25), 0 1px 5px rgba(0,0,0,.45); }
@@ -163,6 +167,37 @@
 		document.body.classList.toggle('wge-hide-chrome', settings.hideChrome);
 		syncOfflineRetries();
 		applying = false;
+	}
+
+	async function setWakeLock(enabled) {
+		if (!enabled || !('wakeLock' in navigator) || document.visibilityState !== 'visible') {
+			if (wakeLock) {
+				await wakeLock.release().catch(() => {});
+				wakeLock = null;
+			}
+			return;
+		}
+		if (wakeLock && !wakeLock.released) return;
+		try {
+			wakeLock = await navigator.wakeLock.request('screen');
+			wakeLock.addEventListener('release', () => { wakeLock = null; });
+		} catch (error) {
+			wakeLock = null;
+		}
+	}
+
+	function handleFullscreenClick(event) {
+		const control = event.target.closest('[aria-label="Full screen"], [aria-label^="Exit full screen"]');
+		if (!control || !grid || !grid.contains(control)) return;
+		const card = control.closest('.wge-grid > *');
+		if (!card) return;
+		event.preventDefault();
+		event.stopPropagation();
+		if (control.getAttribute('aria-label').startsWith('Exit')) {
+			if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+			return;
+		}
+		if (card.requestFullscreen) card.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
 	}
 
 	function findRefreshButton(card) {
@@ -244,6 +279,7 @@
 			<label>Separación <span class="wge-stepper"><button type="button" data-gap-step="-1" aria-label="Reducir separación">-</button><input name="gap" type="number" min="0" max="24" value="${settings.gap}"><button type="button" data-gap-step="1" aria-label="Aumentar separación">+</button></span></label>
 			<label>Ocultar navegación <input name="hideChrome" type="checkbox" ${settings.hideChrome ? 'checked' : ''}></label>
 			<label>Reintentar offline <input name="autoRetry" type="checkbox" ${settings.autoRetry ? 'checked' : ''}></label>
+			<label>Mantener pantalla activa <input name="keepScreenAwake" type="checkbox" ${settings.keepScreenAwake ? 'checked' : ''}></label>
 			<p class="wge-retry-note">Reintentos: 5 s, 15 s, 30 s, 1 min, 2 min y luego cada 5 min.</p>
 			<div class="wge-actions"><button name="whatsNew" type="button">What's new</button><button name="reset" type="button">Restablecer</button></div></div>`;
 		panel.querySelector('.wge-title button').addEventListener('click', () => {
@@ -254,12 +290,15 @@
 			settings.gap = clamp(panel.querySelector('[name="gap"]').value, 0, 24);
 			settings.hideChrome = panel.querySelector('[name="hideChrome"]').checked;
 			settings.autoRetry = panel.querySelector('[name="autoRetry"]').checked;
+			settings.keepScreenAwake = panel.querySelector('[name="keepScreenAwake"]').checked;
 			saveSettings();
 			applyGrid();
+			setWakeLock(settings.keepScreenAwake);
 		};
 		panel.querySelectorAll('[name="columns"], [name="gap"]').forEach((input) => input.addEventListener('input', updateSettings));
 		panel.querySelector('[name="hideChrome"]').addEventListener('change', updateSettings);
 		panel.querySelector('[name="autoRetry"]').addEventListener('change', updateSettings);
+		panel.querySelector('[name="keepScreenAwake"]').addEventListener('change', updateSettings);
 		panel.querySelectorAll('[data-columns-step], [data-gap-step]').forEach((button) => {
 			button.addEventListener('click', () => {
 				const isGap = button.hasAttribute('data-gap-step');
@@ -275,6 +314,7 @@
 		panel.querySelector('[name="reset"]').addEventListener('click', () => {
 			settings = { ...defaults };
 			saveSettings();
+			setWakeLock(settings.keepScreenAwake);
 			panel.remove();
 			buildPanel();
 			applyGrid();
@@ -321,6 +361,9 @@
 		buildPanel();
 		applyGrid();
 		showWhatsNew();
+		document.addEventListener('click', handleFullscreenClick, true);
+		document.addEventListener('visibilitychange', () => setWakeLock(settings.keepScreenAwake));
+		setWakeLock(settings.keepScreenAwake);
 		new MutationObserver(() => window.requestAnimationFrame(applyGrid)).observe(document.body, { childList: true, subtree: true });
 	}
 

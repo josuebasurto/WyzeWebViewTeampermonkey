@@ -27,12 +27,14 @@ El userscript:
 - Incluye un boton para volver a abrir el modal `What's new`.
 - Puede reintentar tarjetas offline con un checkbox, una secuencia de backoff de `5 s`, `15 s`, `30 s`, `1 min`, `2 min` y despues cada `5 min`.
 - Muestra un punto amarillo dentro de cada tarjeta mientras el reintento automatico esta activo.
+- Fuerza fullscreen sobre la tarjeta seleccionada usando `requestFullscreen()` al pulsar el control de Wyze.
+- Puede solicitar `Screen Wake Lock` mediante el checkbox `keepScreenAwake` mientras la pagina esta visible.
 - Guarda opciones en `localStorage` con la clave `wyze-grid-enhancer-settings`.
 - Inicia el panel minimizado.
 - Muestra un modal `What's new` una vez por version usando `wyze-grid-enhancer-whats-new`.
 - Incluye creditos, correo y deslinde de responsabilidades.
 
-Valores predeterminados actuales: `columns: 2`, `gap: 1`, `hideChrome: false`, `autoRetry: false`.
+Valores predeterminados actuales: `columns: 2`, `gap: 1`, `hideChrome: false`, `autoRetry: false`, `keepScreenAwake: false`.
 
 ## Como validar cambios
 
@@ -58,6 +60,8 @@ Tambien revisar errores del archivo en VS Code y probar manualmente en el portal
 - El `MutationObserver` es necesario porque las camaras y sus videos aparecen o se reconstruyen despues de la carga inicial.
 - Los reintentos usan el boton visible `Refresh` de cada tarjeta, no llamadas directas a la API.
 - Los reintentos estan desactivados por defecto y tienen un limite de 5 minutos para evitar llamadas frecuentes.
+- Screen Wake Lock requiere HTTPS, soporte del navegador y puede ser bloqueado por politicas del sistema.
+- El fullscreen usa el SVG estable `[aria-label="Full screen"]` encontrado en la captura 4; si Wyze cambia ese atributo, hay que actualizar el handler.
 - Mantener `@grant none` salvo que se necesite una capacidad concreta de Tampermonkey.
 - Conservar el deslinde: el script es independiente, no afiliado con Wyze y se entrega tal cual.
 
